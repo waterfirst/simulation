@@ -1,0 +1,9 @@
+__pycache__/
+*.npz
+*.bin
+*.dat
+*.png
+!examples/*.png
+*.mp4
+envs/
+out/
