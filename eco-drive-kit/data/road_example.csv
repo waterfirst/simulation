@@ -1,0 +1,11 @@
+﻿field,설명,값
+road_name,평가 대상 도로 이름,OO로 OO길
+length_m,폐도 구간 길이 [m],200
+veh_per_hr,첨두시 차량 통행량 [대/시] (15분 세서 x4),300
+ped_per_hr,첨두시 보행자 [명/시] (15분 세서 x4),200
+detour_m,우회로 추가 거리 [m] (지도 거리재기),400
+is_school_zone,"스쿨존이면 1, 아니면 0",1
+school_users_per_day,이 길로 통학하는 학생 수 [명/일] (추정),150
+alt_route_count,대체 경로 개수 (0이면 유일한 길),1
+facility_count,도보 5분 내 생활시설 수 (정류장·상가·병원 등),4
+notified,"주민에게 사전 고지되었으면 1, 아니면 0",0
