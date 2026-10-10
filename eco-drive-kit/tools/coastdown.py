@@ -33,8 +33,6 @@ def v_model(t, v0, crr, k):
 def fit(t, v, mass):
     t = np.asarray(t, float) - t[0]
     v = np.asarray(v, float)
-    p0 = [v[0], 0.01, 0.3]
-    lo, hi = [v[0] * 0.5, 1e-4, 1e-4], [v[0] * 1.5, 0.2, 10.0]
     p, cov = curve_fit(lambda tt, v0, crr, kk: v_model(tt, v0, crr, kk / mass),
                        t, v, p0=[v[0], 0.01, 0.3 * mass], bounds=(
                            [v[0] * 0.5, 1e-4, 1e-4], [v[0] * 1.5, 0.2, 10.0 * mass]), maxfev=40000)

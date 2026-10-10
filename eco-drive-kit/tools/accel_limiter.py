@@ -82,7 +82,9 @@ def drive_route(p, n_stop=5, seg_m=400.0, v_tgt=50/3.6, a_brake=2.0, wait_s=8.0)
             ts.append(t); vs.append(v)
             if v <= 0.01 and d_left <= d_stop:
                 break
-            if t > 3000:
+            if t > 3000:                                  # 제어기가 너무 느려 구간을 못 끝내는 경우
+                print(f"  [경고] 제한이 너무 강해 {seg_m:.0f} m 구간을 끝내지 못했다. "
+                      f"a_max 나 map_k 를 키워라.")
                 break
         for _ in range(int(wait_s / DT)):                 # 신호 대기
             t += DT; ts.append(t); vs.append(0.0)
