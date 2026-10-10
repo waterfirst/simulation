@@ -2,7 +2,7 @@
 
 Same layout as the in-house ICP model: chamber R=15 cm, H=10 cm, quartz window 2 cm,
 4-turn planar coil above it, grounded walls. Plasma = uniform Drude medium (cold plasma,
-the same approximation HFSS uses). One run per electron density.
+the cold-plasma approximation an EM solver such as HFSS would be given as a material). One run per electron density.
 
 usage: python icp_meep.py <ne_cm3> <out.npz>
 """

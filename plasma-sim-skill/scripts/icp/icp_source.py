@@ -117,12 +117,15 @@ def solve_em(g, n0, nu, f=13.56e6, I=1.0):
     return dict(A=Aphi, E=Ephi, pden=pden, P=P, Rp=Rp, ne=ne)
 
 
-def operate(g, p_mtorr, P_rf, R_coil=0.6, f=13.56e6, n_guess=1e16, it=40, verbose=False):
+def operate(g, p_mtorr, P_rf, R_coil=0.6, f=13.56e6, n_guess=1e16, it=40, verbose=False, stochastic=False):
     ng = ng_from(p_mtorr)
     Te, Aeff = global_Te(g, ng)
-    nu = ng * (Kel(Te) + Kex(Te) + Kiz(Te))                  # electron-neutral momentum-ish collision freq
+    nu_m = ng * (Kel(Te) + Kex(Te) + Kiz(Te))                # electron-neutral momentum-ish collision freq
+    nu = nu_m
     n0 = n_guess
     for k in range(it):
+        if stochastic:                                       # skin depth and nu co-depend -> solve together with n0
+            nu = nu_m + nu_stochastic(Te, cold_skin(n0, nu, f))
         em = solve_em(g, n0, nu, f)
         eta = em["Rp"] / (em["Rp"] + R_coil)
         P_abs = P_rf * eta
@@ -130,10 +133,13 @@ def operate(g, p_mtorr, P_rf, R_coil=0.6, f=13.56e6, n_guess=1e16, it=40, verbos
         if verbose: print(f"  it{k:2d} n0={n0:.3e} Rp={em['Rp']:.3f} eta={eta:.3f} -> n={n_new:.3e}")
         if abs(n_new - n0) / n0 < 2e-3: n0 = n_new; break
         n0 = np.exp(0.5 * np.log(n0) + 0.5 * np.log(max(n_new, 1e12)))   # damped in log space
+    if stochastic:
+        nu = nu_m + nu_stochastic(Te, cold_skin(n0, nu, f))
     em = solve_em(g, n0, nu, f)
     I_coil = np.sqrt(2 * P_rf / (em["Rp"] + R_coil))
     scale = I_coil ** 2                                        # fields were solved for I = 1 A
-    return dict(p=p_mtorr, P_rf=P_rf, Te=Te, nu=nu, n0=n0, Rp=em["Rp"], eta=em["Rp"] / (em["Rp"] + R_coil),
+    return dict(p=p_mtorr, P_rf=P_rf, Te=Te, nu=nu, nu_m=nu_m, nu_stoch=nu - nu_m, stochastic=stochastic,
+                n0=n0, Rp=em["Rp"], eta=em["Rp"] / (em["Rp"] + R_coil),
                 I=I_coil, pden=em["pden"] * scale, E=em["E"] * I_coil, ne=em["ne"], iters=k + 1,
                 skin=cold_skin(n0, nu, f))
 
@@ -143,6 +149,18 @@ def cold_skin(n0, nu, f=13.56e6):
     w = 2 * np.pi * f; wp2 = n0 * E ** 2 / (EPS0 * ME)
     k = w / 299792458.0 * np.sqrt(1 - wp2 / (w * (w - 1j * nu)) + 0j)
     return 1 / abs(k.imag)
+
+
+def nu_stochastic(Te, skin):
+    """Effective collision frequency for collisionless (stochastic) electron heating: v_te / (4 delta).
+
+    Electrons crossing the skin layer in less than an RF period absorb power without colliding
+    (Lieberman & Lichtenberg, 2nd ed., ch. 12). It matters when v_te >~ omega*delta, which is the
+    low-pressure regime where nu_m < omega -- exactly where the ohmic-only Drude model is weakest.
+    Folding it in as an added collision frequency is the standard fluid-level approximation; a real
+    treatment needs a non-local (kinetic) conductivity.
+    """
+    return np.sqrt(E * Te / ME) / (4 * skin)
 
 
 def inductance(g, A, I=1.0):

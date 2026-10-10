@@ -30,7 +30,7 @@ H = f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="v
 <h1>오픈소스 기반 ICP 플라즈마 소스 설계·해석</h1>
 <div class="sub">13.56 MHz 아르곤 ICP · 2D 축대칭 전자기 + 글로벌 모델 자기일관 결합 · Meep FDTD 교차검증 · eduPIC PIC/MCC 재현 · 2026-10-10 · {os.environ.get('REPORT_AUTHOR', '')}</div>
 
-<div class="box"><b>요지.</b> 상용 HFSS 대신 무료 도구로 ICP 소스를 설계·해석했다. (1) 자체 작성 2D 축대칭 A<sub>φ</sub> 주파수영역 해석기와
+<div class="box"><b>요지.</b> 상용 플라즈마 해석 툴 없이 무료 도구로 ICP 소스를 설계·해석했다. (HFSS는 플라즈마 툴이 아니라 시간조화 Maxwell 해석기다. 여기서는 그 전자기 부분을 같은 페이저 방식으로 풀되 플라즈마 밀도까지 자기일관으로 묶는다.) (1) 자체 작성 2D 축대칭 A<sub>φ</sub> 주파수영역 해석기와
 아르곤 글로벌 모델을 변압기 결합으로 묶어 RF 전력만으로 n<sub>0</sub>, T<sub>e</sub>, R<sub>p</sub>, 결합효율, 코일전류, 인덕턴스, 매칭 커패시터를 자기일관으로 구한다.
 (2) 전자기장 부분은 오픈소스 FDTD(Meep 1.34, 원통좌표 m=0, Drude 매질)로 독립 검증했다. (3) 입자 수준 PIC/MCC 코드 eduPIC으로 원 논문의 CCP 기준 사례를 재현했다(전자·이온 흡수 전력 0.2·0.7% 차).
 <b>밀도 분포의 형상은 가정</b>(확산 기본모드)했고 크기만 자기일관이므로, 웨이퍼 균일도 예측에는 쓰지 않는다. 회사 장비 조건은 사용하지 않았다.</div>
@@ -127,7 +127,7 @@ Z_load = (R_p + R_coil) + jωL,   L-매칭(발전기측 병렬 C_p, 코일측 �
 
 <h2>7. 한계</h2>
 <ol><li><b>밀도 형상 가정</b>: 수송(확산·대류·이온 관성)을 풀지 않아 균일도·국부 가열 효과(비국소 전자수송) 반영 불가.</li>
-<li>T<sub>e</sub> 공간 균일, Maxwellian EEDF, 단일 ν<sub>m</sub>. 저압에서 비충돌(확률적) 가열 미포함 → 5 mTorr 이하에서 R<sub>p</sub> 과소평가 가능.</li>
+<li>T<sub>e</sub> 공간 균일, Maxwellian EEDF, 단일 ν<sub>m</sub>. <b>비충돌(확률적) 가열은 기본값에서 꺼져 있다</b> — ν<sub>eff</sub> = ν<sub>m</sub> + v<sub>te</sub>/4δ 를 넣으면 R<sub>p</sub>가 10 mTorr에서 +38%, 3 mTorr +103%, 1 mTorr +359% 커진다(<code>operate(..., stochastic=True)</code>, <code>stochastic_check.py</code>). 30 mTorr 이상에서만 무시할 수 있다.</li>
 <li>E-모드(용량성 결합)·E–H 히스테리시스 미포함. 코일 정전용량·자기공진 미포함.</li>
 <li>코일을 동심 링으로 근사(나선의 방위각 비대칭은 3D 필요). R<sub>coil</sub>=0.6 Ω 가정, 매칭 회로 기생성분 무시.</li>
 <li>Meep 고밀도(10¹²) 고해상도 이탈 원인 미해결. 가스 가열·준안정 단계 이온화 미포함.</li>
@@ -135,7 +135,7 @@ Z_load = (R_p + R_coil) + jωL,   L-매칭(발전기측 병렬 C_p, 코일측 �
 
 <h2>8. 전문가께 여쭙고 싶은 점</h2>
 <ol><li>밀도 형상을 가정하는 변압기 모델 + 2D 장 해석의 조합이, 설계 초기의 코일 배치·매칭 선정 용도로 어디까지 쓸 만한지.</li>
-<li>5 mTorr 이하에서 비충돌 가열을 넣는 가장 실용적인 근사(유효 충돌주파수 ν<sub>eff</sub> = ν<sub>m</sub> + ν<sub>stoc</sub> 등)는 무엇이 적절한지.</li>
+<li>유효 충돌주파수로 접어 넣는 ν<sub>stoc</sub> = v<sub>te</sub>/4δ 근사가 어느 압력까지 믿을 만한지, 그 아래에서는 비국소(운동론) 전도도가 필수인지.</li>
 <li>다음 단계로 유체 수송(드리프트-확산 + 전자 에너지식)을 붙일 때 추천하는 오픈소스(Zapdos/MOOSE 등) 또는 검증 사례.</li>
 <li>Meep 10¹² cm⁻³ 고해상도 결과의 가짜 바닥 원인(드루드 분산 FDTD의 저주파 안정성, 램프 시간 부족 등)에 대한 견해.</li></ol>
 
@@ -150,7 +150,7 @@ Z_load = (R_p + R_coil) + jωL,   L-매칭(발전기측 병렬 C_p, 코일측 �
 <ol><li>M. A. Lieberman, A. J. Lichtenberg, <i>Principles of Plasma Discharges and Materials Processing</i>, 2nd ed., Wiley (2005), ch. 3, 10, 12.</li>
 <li>A. F. Oskooi et al., "MEEP: A flexible free-software package for electromagnetic simulations by the FDTD method," <i>Comput. Phys. Commun.</i> 181, 687 (2010).</li>
 <li>Z. Donkó et al., "eduPIC: an introductory particle based code for radio-frequency plasma simulation," <i>Plasma Sources Sci. Technol.</i> 30, 095017 (2021). github.com/donkozoltan/eduPIC</li>
-<li>Singularity Engineering, "RF coil for plasma system with ANSYS HFSS" (webinar, 2020).</li></ol>
+<li>Singularity Engineering, "RF coil for plasma system with ANSYS HFSS" (webinar, 2020). — HFSS는 전자기만 풀며, 플라즈마는 유체·화학 해석과의 결합이 필요하다.</li></ol>
 </div></body></html>"""
 Path("ICP_plasma_opensource_report.html").write_text(H, encoding="utf-8")
 print("written", round(len(H)/1024), "KB")

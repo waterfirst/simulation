@@ -12,6 +12,7 @@ ol li,ul li{margin:4px 0}@media print{.w{padding:0}h2{page-break-after:avoid}fig
 <h1>오픈소스 기반 ICP 플라즈마 소스 설계·해석</h1>
 <div class="sub">13.56 MHz 아르곤 ICP · 2D 축대칭 전자기 + 글로벌 모델 자기일관 결합 · Meep FDTD 교차검증 · eduPIC PIC/MCC 재현 · 2026-10-10 · test</div>
 
+<div class="box" style="border-left:4px solid #d62728;background:#fff6f0"><b>정정 (2026-10-10, 플라즈마 전문가 검토 후).</b> 이 보고서 본문은 최초 생성본이며 아래 두 가지가 틀렸다. 본문은 기록을 위해 그대로 둔다.<ol style="margin:6px 0 0 18px"><li><b>HFSS를 플라즈마 해석 툴처럼 묶어 썼다.</b> HFSS는 시간조화 Maxwell 해석기이고 "고주파"의 기준은 해석공간에 들어가는 파장 수다. 13.56 MHz·0.3 m 챔버는 파장의 1/70짜리 준정적 문제라 애초에 HFSS의 장기가 필요한 영역이 아니다. 상용 쪽에서 플라즈마를 보려면 EM 해석과 유체·화학 해석을 결합해야 한다.</li><li><b>옴 가열만 넣어 R<sub>p</sub>와 결합효율이 과소평가됐다.</b> ν<sub>m</sub>(3.2e7) &lt; ω(8.5e7)이라 무충돌(확률적) 가열이 빠질 수 없는 크기다. ν<sub>eff</sub> = ν<sub>m</sub> + v<sub>te</sub>/4δ 를 자기일관 반복에 넣으면 10 mTorr에서 R<sub>p</sub> 1.05→1.45 Ω(+38%), 효율 63.5→70.7%, n₀ +11%다. 보정폭은 압력에 따라 1 mTorr +359% · 3 mTorr +103% · 30 mTorr +12% · 100 mTorr +1%로 ν<sub>m</sub>/ω를 따라간다. <b>본문의 효율 수치는 모두 보정 전 값이다.</b> 재현: <code>scripts/icp/stochastic_check.py</code></li></ol></div>
 <div class="box"><b>요지.</b> 상용 HFSS 대신 무료 도구로 ICP 소스를 설계·해석했다. (1) 자체 작성 2D 축대칭 A<sub>φ</sub> 주파수영역 해석기와
 아르곤 글로벌 모델을 변압기 결합으로 묶어 RF 전력만으로 n<sub>0</sub>, T<sub>e</sub>, R<sub>p</sub>, 결합효율, 코일전류, 인덕턴스, 매칭 커패시터를 자기일관으로 구한다.
 (2) 전자기장 부분은 오픈소스 FDTD(Meep 1.34, 원통좌표 m=0, Drude 매질)로 독립 검증했다. (3) 입자 수준 PIC/MCC 코드 eduPIC으로 원 논문의 CCP 기준 사례를 재현했다(전자·이온 흡수 전력 0.2·0.7% 차).
